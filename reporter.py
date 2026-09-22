@@ -1,4 +1,8 @@
-﻿import locale
+﻿import csv
+import locale
+from pathlib import Path
+
+from config import PASTA_DIFFS
 from models import ResumoDiff
 
 try:
@@ -55,3 +59,60 @@ def imprimir_resumo(resumo: ResumoDiff) -> None:
             )
 
     print()
+
+
+def exportar_csv_diff(resumo: ResumoDiff) -> Path:
+    Path(PASTA_DIFFS).mkdir(parents=True, exist_ok=True)
+
+    nome_arquivo = f"diff_{resumo.periodo_anterior}_{resumo.periodo_atual}.csv"
+    caminho = Path(PASTA_DIFFS) / nome_arquivo
+
+    cabecalho = ["registro_ans", "razao_social", "tipo_mudanca", "campo", "valor_anterior", "valor_atual"]
+    linhas = []
+
+    for registro in resumo.adicionados:
+        linhas.append({
+            "registro_ans": registro.get("registro_ans", ""),
+            "razao_social": registro.get("razao_social", ""),
+            "tipo_mudanca": "adicionado",
+            "campo": "",
+            "valor_anterior": "",
+            "valor_atual": "",
+        })
+
+    for registro in resumo.removidos:
+        linhas.append({
+            "registro_ans": registro.get("registro_ans", ""),
+            "razao_social": registro.get("razao_social", ""),
+            "tipo_mudanca": "removido",
+            "campo": "",
+            "valor_anterior": "",
+            "valor_atual": "",
+        })
+
+    for alt in resumo.alteracoes:
+        linhas.append({
+            "registro_ans": alt.registro_ans,
+            "razao_social": alt.razao_social,
+            "tipo_mudanca": "alterado",
+            "campo": alt.campo,
+            "valor_anterior": alt.valor_anterior,
+            "valor_atual": alt.valor_atual,
+        })
+
+    for inc in resumo.inconsistencias:
+        linhas.append({
+            "registro_ans": inc.registro_ans,
+            "razao_social": inc.razao_social,
+            "tipo_mudanca": "inconsistencia",
+            "campo": inc.tipo,
+            "valor_anterior": "",
+            "valor_atual": inc.descricao,
+        })
+
+    with open(caminho, "w", newline="", encoding="utf-8") as arquivo:
+        escritor = csv.DictWriter(arquivo, fieldnames=cabecalho)
+        escritor.writeheader()
+        escritor.writerows(linhas)
+
+    return caminho
