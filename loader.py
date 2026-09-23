@@ -1,4 +1,4 @@
-﻿import unicodedata
+import unicodedata
 from pathlib import Path
 
 import pandas as pd
@@ -16,6 +16,8 @@ def _normalizar_colunas(df: pd.DataFrame) -> pd.DataFrame:
     for coluna in df.columns:
         nome = coluna.strip().lower().replace(" ", "_").replace("-", "_")
         nome = _remover_acentos(nome)
+        if nome == "registro_operadora":
+            nome = COLUNA_CHAVE
         novos_nomes[coluna] = nome
     return df.rename(columns=novos_nomes)
 
