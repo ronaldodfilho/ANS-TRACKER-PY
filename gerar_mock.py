@@ -1,18 +1,20 @@
 import random
 from pathlib import Path
+import pandas as pd
+
+from config import CODIFICACAO, SEPARADOR
+from loader import carregar_snapshot
 
 MODALIDADES = [
-    "Cooperativa Medica",
+    "Cooperativa Médica",
     "Medicina de Grupo",
-    "Seguradora Especializada em Saude",
-    "Cooperativa Odontologica",
+    "Seguradora Especializada em Saúde",
+    "Cooperativa Odontológica",
     "Odontologia de Grupo",
-    "Administradora de Beneficios",
+    "Administradora de Benefícios",
     "Filantropia",
-    "Autogestao",
+    "Autogestão",
 ]
-
-SITUACOES = ["Ativa", "Ativa", "Ativa", "Ativa", "Cancelada", "Em Liquidacao"]
 
 UEFS = ["SP", "RJ", "MG", "RS", "PR", "BA", "SC", "GO", "PE", "CE"]
 
@@ -25,85 +27,97 @@ NOMES_BASE = [
 
 
 def _gerar_cnpj_valido() -> str:
-    return str(random.randint(10000000000000, 99999999999999))
+    return f"{random.randint(10000000, 99999999):08d}0001{random.randint(10, 99):02d}"
 
 
 def _gerar_registro_ans(indice: int) -> str:
     return str(indice + 300000).zfill(6)
 
 
-def _gerar_operadora(indice: int, variacao: int = 0) -> dict:
-    random.seed(indice)
+def _gerar_operadora_sintetica(indice: int) -> dict:
     nome = random.choice(NOMES_BASE)
     sufixo = random.choice(["LTDA", "S.A.", "COOPERATIVA", "ASSOCIACAO"])
     modalidade = random.choice(MODALIDADES)
     uf = random.choice(UEFS)
-    situacao = random.choice(SITUACOES)
-    cnpj = _gerar_cnpj_valido()
-
-    if variacao > 0:
-        random.seed(indice + variacao * 1000)
-        modalidade = random.choice(MODALIDADES)
-        situacao = random.choice(SITUACOES)
 
     return {
-        "Registro ANS": _gerar_registro_ans(indice),
-        "CNPJ": cnpj,
-        "Razao Social": f"{nome} {sufixo}",
-        "Nome Fantasia": nome,
-        "Modalidade": modalidade,
-        "Logradouro": f"Rua das Flores, {random.randint(1, 999)}",
-        "Numero": str(random.randint(1, 9999)),
-        "Complemento": "",
-        "Bairro": "Centro",
-        "Cidade": "Sao Paulo",
-        "UF": uf,
-        "CEP": f"{random.randint(10000000, 99999999):08d}",
-        "DDD": str(random.randint(11, 99)),
-        "Telefone": f"{random.randint(10000000, 99999999)}",
-        "Fax": "",
-        "Endereco eletronico": f"contato@{nome.lower().replace(' ', '')}.com.br",
-        "Representante": f"Fulano de Tal {indice}",
-        "Cargo Representante": "Diretor",
-        "Regiao de Comercializacao": str(random.randint(1, 9)),
-        "Data Registro ANS": f"{random.randint(1990, 2015)}-{random.randint(1, 12):02d}-01",
-        "Situacao": situacao,
+        "registro_ans": _gerar_registro_ans(indice),
+        "cnpj": _gerar_cnpj_valido(),
+        "razao_social": f"{nome} {sufixo}",
+        "nome_fantasia": nome,
+        "modalidade": modalidade,
+        "logradouro": f"RUA DAS FLORES, {random.randint(1, 999)}",
+        "numero": str(random.randint(1, 9999)),
+        "complemento": "",
+        "bairro": "CENTRO",
+        "cidade": "São Paulo",
+        "uf": uf,
+        "cep": f"{random.randint(10000000, 99999999):08d}",
+        "ddd": str(random.randint(11, 99)),
+        "telefone": str(random.randint(10000000, 99999999)),
+        "fax": "",
+        "endereco_eletronico": f"contato@{nome.lower().replace(' ', '')}.com.br",
+        "representante": f"FULANO DE TAL {indice}",
+        "cargo_representante": "DIRETOR",
+        "regiao_de_comercializacao": str(random.randint(1, 9)),
+        "data_registro_ans": f"{random.randint(1990, 2020)}-{random.randint(1, 12):02d}-01",
     }
 
 
-def gerar_snapshot(periodo: str, total: int = 120, removidos: list = None, adicionados: list = None, variacao: int = 0) -> None:
-    pasta = Path("data/snapshots")
-    pasta.mkdir(parents=True, exist_ok=True)
+def gerar_a_partir_de_base(caminho_base: Path, caminho_destino: Path, qtd_alterados: int = 5, qtd_removidos: int = 2, qtd_novos: int = 3) -> None:
+    df = carregar_snapshot(caminho_base)
 
-    ids_removidos = set(removidos or [])
-    ids_extras = adicionados or []
+    # Remover alguns registros
+    if len(df) > qtd_removidos and qtd_removidos > 0:
+        indices_remover = random.sample(list(df.index), qtd_removidos)
+        df = df.drop(indices_remover).reset_index(drop=True)
 
-    registros = []
-    for i in range(total):
-        if i in ids_removidos:
-            continue
-        registros.append(_gerar_operadora(i, variacao=variacao))
+    # Alterar alguns registros
+    if "modalidade" in df.columns:
+        indices_alterar = random.sample(list(df.index), min(qtd_alterados, len(df)))
+        for idx in indices_alterar:
+            modalidades_possiveis = [m for m in MODALIDADES if m != df.at[idx, "modalidade"]]
+            if modalidades_possiveis:
+                df.at[idx, "modalidade"] = random.choice(modalidades_possiveis)
+            if "representante" in df.columns:
+                df.at[idx, "representante"] = f"NOVO REPRESENTANTE {random.randint(100, 999)}"
 
-    for i, extra in enumerate(ids_extras):
-        registros.append(_gerar_operadora(total + 100 + i))
+    # Adicionar novos registros
+    novos = []
+    maior_reg = 900000
+    for i in range(qtd_novos):
+        novo = _gerar_operadora_sintetica(maior_reg + i)
+        novos.append(novo)
 
-    cabecalho = list(registros[0].keys())
-    caminho = pasta / f"{periodo}.csv"
+    if novos:
+        df_novos = pd.DataFrame(novos)
+        df = pd.concat([df, df_novos], ignore_index=True)
 
-    with open(caminho, "w", encoding="latin-1") as arquivo:
-        arquivo.write(";".join(cabecalho) + "\n")
-        for registro in registros:
-            linha = ";".join(str(registro.get(col, "")) for col in cabecalho)
-            arquivo.write(linha + "\n")
-
-    print(f"Snapshot gerado: {caminho} ({len(registros)} registros)")
+    df.to_csv(caminho_destino, sep=SEPARADOR, encoding=CODIFICACAO, index=False)
+    print(f"Snapshot gerado com base em {caminho_base.name}: {caminho_destino} ({len(df)} registros)")
 
 
 def main() -> None:
-    gerar_snapshot("2026-08", total=120)
-    gerar_snapshot("2026-09", total=120, removidos=[5, 23], adicionados=["novo_a", "novo_b", "novo_c"], variacao=1)
-    print("Snapshots de teste gerados com sucesso.")
-    print("Execute: python main.py 2026-08 2026-09 --exportar")
+    pasta = Path("data/snapshots")
+    pasta.mkdir(parents=True, exist_ok=True)
+    caminho_junho = pasta / "2026-06.csv"
+
+    if caminho_junho.exists():
+        print(f"Base de junho encontrada em: {caminho_junho}")
+        caminho_julho = pasta / "2026-07.csv"
+        gerar_a_partir_de_base(caminho_junho, caminho_julho, qtd_alterados=10, qtd_removidos=3, qtd_novos=4)
+        print("Execucao sugerida:")
+        print("  python main.py 2026-06 2026-07 --sem-download --exportar")
+    else:
+        # Fallback sintético
+        caminho_08 = pasta / "2026-08.csv"
+        caminho_09 = pasta / "2026-09.csv"
+        registros_08 = [_gerar_operadora_sintetica(i) for i in range(120)]
+        df_08 = pd.DataFrame(registros_08)
+        df_08.to_csv(caminho_08, sep=SEPARADOR, encoding=CODIFICACAO, index=False)
+        gerar_a_partir_de_base(caminho_08, caminho_09)
+        print("Snapshots sintéticos gerados.")
+        print("  python main.py 2026-08 2026-09 --sem-download --exportar")
 
 
 if __name__ == "__main__":

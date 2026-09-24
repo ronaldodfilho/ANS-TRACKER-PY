@@ -35,12 +35,20 @@ def _padronizar_chave(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def carregar_snapshot(caminho: Path) -> pd.DataFrame:
-    df = pd.read_csv(
-        caminho,
-        sep=SEPARADOR,
-        encoding=CODIFICACAO,
-        dtype=str,
-    )
+    try:
+        df = pd.read_csv(
+            caminho,
+            sep=SEPARADOR,
+            encoding="utf-8",
+            dtype=str,
+        )
+    except (UnicodeDecodeError, Exception):
+        df = pd.read_csv(
+            caminho,
+            sep=SEPARADOR,
+            encoding=CODIFICACAO,
+            dtype=str,
+        )
     df = _normalizar_colunas(df)
     df = _normalizar_valores(df)
     df = _padronizar_chave(df)

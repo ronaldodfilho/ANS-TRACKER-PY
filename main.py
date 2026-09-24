@@ -8,6 +8,11 @@ from fetcher import baixar_snapshot, snapshot_existe
 from loader import carregar_snapshot
 from reporter import exportar_csv_diff, imprimir_resumo
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 
 def _construir_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
