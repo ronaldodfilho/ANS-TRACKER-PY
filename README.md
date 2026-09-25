@@ -69,10 +69,16 @@ python main.py 2026-06 2026-09 --sem-download --exportar
 
 ### 3. Execução da Interface Web (FastAPI + Vue.js)
 
-Inicie o servidor web com o uvicorn:
+Inicie o servidor web com:
 
 ```bash
-uvicorn api:app --reload
+python api.py
+```
+
+Ou através do módulo uvicorn:
+
+```bash
+python -m uvicorn api:app --reload
 ```
 
 Em seguida, acesse no navegador: `http://localhost:8000`
