@@ -22,61 +22,36 @@
       margin: 0 auto;
     }
     header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
     }
     h1 {
       font-size: 24px;
       color: #1a202c;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
     p.subtitulo {
       font-size: 14px;
       color: #718096;
     }
-    .painel-filtros {
-      background: #fff;
-      padding: 16px 20px;
-      border-radius: 8px;
-      border: 1px solid #e2e8f0;
-      display: flex;
-      gap: 16px;
-      align-items: flex-end;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-    .campo-filtro {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    label {
-      font-size: 13px;
-      font-weight: 600;
-      color: #4a5568;
-    }
-    input, select {
-      padding: 8px 12px;
-      border: 1px solid #cbd5e0;
-      border-radius: 6px;
-      font-size: 14px;
-      min-width: 160px;
-    }
-    button {
-      padding: 8px 18px;
+    .botao-download {
+      padding: 9px 18px;
       background-color: #2b6cb0;
       color: #fff;
-      border: none;
+      text-decoration: none;
       border-radius: 6px;
       font-size: 14px;
       font-weight: 600;
-      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      transition: background-color 0.15s;
     }
-    button:hover {
+    .botao-download:hover {
       background-color: #2c5282;
-    }
-    button:disabled {
-      background-color: #a0aec0;
-      cursor: not-allowed;
     }
     .erro-mensagem {
       background: #fed7d7;
@@ -113,6 +88,7 @@
       gap: 8px;
       border-bottom: 1px solid #e2e8f0;
       margin-bottom: 16px;
+      overflow-x: auto;
     }
     .aba {
       padding: 10px 16px;
@@ -124,6 +100,7 @@
       cursor: pointer;
       border-bottom: 2px solid transparent;
       border-radius: 0;
+      white-space: nowrap;
     }
     .aba.ativa {
       color: #2b6cb0;
@@ -162,10 +139,6 @@
       background: #edf2f7;
       color: #4a5568;
     }
-    .tag-critica {
-      background: #feebc8;
-      color: #c05621;
-    }
     .tag-inconsistencia {
       background: #fed7d7;
       color: #9b2c2c;
@@ -176,34 +149,45 @@
       color: #a0aec0;
       font-size: 14px;
     }
+    .carregando {
+      padding: 48px;
+      text-align: center;
+      color: #718096;
+      font-size: 15px;
+      background: #fff;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
   </style>
 </head>
 <body>
   <div id="aplicativo" class="conteiner">
     <header>
-      <h1>ANS Health Tracker</h1>
-      <p class="subtitulo">Acompanhamento e comparação de operadoras de saúde cadastradas na ANS</p>
+      <div>
+        <h1>ANS Health Tracker</h1>
+        <p class="subtitulo" v-if="resultado">
+          Comparação cadastral: {{ resultado.periodo_anterior }} até {{ resultado.periodo_atual }}
+        </p>
+        <p class="subtitulo" v-else>
+          Carregando dados cadastrais da ANS...
+        </p>
+      </div>
+      <div>
+        <a href="/api/download-csv" class="botao-download" v-if="resultado">
+          Baixar CSV do Diff
+        </a>
+      </div>
     </header>
-
-    <div class="painel-filtros">
-      <div class="campo-filtro">
-        <label for="periodo_anterior">Período Anterior</label>
-        <input id="periodo_anterior" v-model="periodoAnterior" placeholder="AAAA-MM">
-      </div>
-      <div class="campo-filtro">
-        <label for="periodo_atual">Período Atual</label>
-        <input id="periodo_atual" v-model="periodoAtual" placeholder="AAAA-MM">
-      </div>
-      <button :disabled="carregando" @click="buscarComparacao">
-        {{ carregando ? 'Processando...' : 'Comparar' }}
-      </button>
-    </div>
 
     <div v-if="erro" class="erro-mensagem">
       {{ erro }}
     </div>
 
-    <div v-if="resultado">
+    <div v-if="carregando" class="carregando">
+      Obtendo e processando dados cadastrais da ANS...
+    </div>
+
+    <div v-else-if="resultado">
       <div class="grade-metricas">
         <div class="cartao-metrica">
           <span>Novos Registros</span>
@@ -226,17 +210,10 @@
       <div class="abas">
         <button
           class="aba"
-          :class="{ ativa: abaAtiva === 'criticas' }"
-          @click="abaAtiva = 'criticas'"
-        >
-          Mudanças Críticas ({{ resultado.alteracoes_criticas.length }})
-        </button>
-        <button
-          class="aba"
           :class="{ ativa: abaAtiva === 'alterados' }"
           @click="abaAtiva = 'alterados'"
         >
-          Todas Alterações ({{ resultado.alteracoes.length }})
+          Alterações ({{ resultado.alteracoes.length }})
         </button>
         <button
           class="aba"
@@ -262,30 +239,6 @@
       </div>
 
       <div class="painel-tabela">
-        <div v-if="abaAtiva === 'criticas'">
-          <table v-if="resultado.alteracoes_criticas.length > 0">
-            <thead>
-              <tr>
-                <th>Registro ANS</th>
-                <th>Razão Social</th>
-                <th>Campo</th>
-                <th>Valor Anterior</th>
-                <th>Valor Atual</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(item, indice) in resultado.alteracoes_criticas" :key="indice">
-                <td>{{ item.registro_ans }}</td>
-                <td>{{ item.razao_social }}</td>
-                <td><span class="tag-mudanca tag-critica">{{ item.campo }}</span></td>
-                <td>{{ item.valor_anterior }}</td>
-                <td>{{ item.valor_atual }}</td>
-              </tr>
-            </tbody>
-          </table>
-          <div v-else class="vazio">Nenhuma mudança crítica identificada no período.</div>
-        </div>
-
         <div v-if="abaAtiva === 'alterados'">
           <table v-if="resultado.alteracoes.length > 0">
             <thead>
@@ -388,22 +341,16 @@
 
     createApp({
       setup() {
-        const periodoAnterior = ref('2026-06');
-        const periodoAtual = ref('2026-09');
         const resultado = ref(null);
         const erro = ref(null);
-        const carregando = ref(false);
-        const abaAtiva = ref('criticas');
+        const carregando = ref(true);
+        const abaAtiva = ref('alterados');
 
-        async function buscarComparacao() {
-          if (!periodoAnterior.value || !periodoAtual.value) {
-            erro.value = 'Informe os dois períodos para comparação.';
-            return;
-          }
+        async function carregarDados() {
           erro.value = null;
           carregando.value = true;
           try {
-            const resposta = await fetch(`/api/comparar?periodo_anterior=${periodoAnterior.value}&periodo_atual=${periodoAtual.value}`);
+            const resposta = await fetch('/api/dados');
             if (!resposta.ok) {
               const dadosErro = await resposta.json();
               throw new Error(dadosErro.detail || 'Falha ao processar comparação.');
@@ -417,17 +364,14 @@
         }
 
         onMounted(() => {
-          buscarComparacao();
+          carregarDados();
         });
 
         return {
-          periodoAnterior,
-          periodoAtual,
           resultado,
           erro,
           carregando,
-          abaAtiva,
-          buscarComparacao
+          abaAtiva
         };
       }
     }).mount('#aplicativo');
