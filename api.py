@@ -33,6 +33,17 @@ def _obter_resumo(periodo_anterior: str = "2026-06", periodo_atual: str = "2026-
     return enriquecer_diff(resumo, df_atual)
 
 
+@app.on_event("startup")
+def inicializar_dados():
+    pasta = Path(PASTA_SNAPSHOTS)
+    pasta.mkdir(parents=True, exist_ok=True)
+    if not snapshot_existe("2026-09"):
+        try:
+            baixar_snapshot("2026-09")
+        except Exception as e:
+            print(f"Aviso: Nao foi possivel baixar snapshot 2026-09 na inicializacao: {e}")
+
+
 @app.get("/")
 def pagina_inicial():
     return FileResponse("static/index.html")
@@ -41,8 +52,12 @@ def pagina_inicial():
 @app.get("/api/snapshots")
 def listar_snapshots():
     pasta = Path(PASTA_SNAPSHOTS)
-    if not pasta.exists():
-        return []
+    pasta.mkdir(parents=True, exist_ok=True)
+    if not snapshot_existe("2026-09"):
+        try:
+            baixar_snapshot("2026-09")
+        except Exception:
+            pass
     return sorted([p.stem for p in pasta.glob("*.csv")])
 
 

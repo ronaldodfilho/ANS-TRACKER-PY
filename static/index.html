@@ -418,9 +418,9 @@
         const erro = ref(null);
         const carregando = ref(true);
         const abaAtiva = ref('alterados');
-        const snapshotsDisponiveis = ref(['2026-06', '2026-07']);
+        const snapshotsDisponiveis = ref(['2026-06', '2026-07', '2026-09']);
         const periodoAnterior = ref('2026-06');
-        const periodoAtual = ref('2026-07');
+        const periodoAtual = ref('2026-09');
 
         const urlDownloadCsv = computed(() => {
           return `/api/download-csv?periodo_anterior=${encodeURIComponent(periodoAnterior.value)}&periodo_atual=${encodeURIComponent(periodoAtual.value)}`;
@@ -436,8 +436,10 @@
                 if (!lista.includes(periodoAnterior.value)) {
                   periodoAnterior.value = lista[0];
                 }
-                if (!lista.includes(periodoAtual.value)) {
-                  periodoAtual.value = lista.length > 1 ? lista[1] : lista[0];
+                if (lista.includes('2026-09')) {
+                  periodoAtual.value = '2026-09';
+                } else if (!lista.includes(periodoAtual.value)) {
+                  periodoAtual.value = lista[lista.length - 1];
                 }
               }
             }
