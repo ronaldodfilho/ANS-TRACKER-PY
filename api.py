@@ -38,6 +38,14 @@ def pagina_inicial():
     return FileResponse("static/index.html")
 
 
+@app.get("/api/snapshots")
+def listar_snapshots():
+    pasta = Path(PASTA_SNAPSHOTS)
+    if not pasta.exists():
+        return []
+    return sorted([p.stem for p in pasta.glob("*.csv")])
+
+
 @app.get("/api/dados")
 def obter_dados(periodo_anterior: str = "2026-06", periodo_atual: str = "2026-09"):
     resumo = _obter_resumo(periodo_anterior, periodo_atual)
@@ -90,5 +98,9 @@ def baixar_csv(periodo_anterior: str = "2026-06", periodo_atual: str = "2026-09"
 
 
 if __name__ == "__main__":
+    import os
     import uvicorn
-    uvicorn.run("api:app", host="127.0.0.1", port=8000, reload=True)
+
+    port = int(os.getenv("PORT", 8000))
+    host = "0.0.0.0" if os.getenv("PORT") else "127.0.0.1"
+    uvicorn.run("api:app", host=host, port=port, reload=not os.getenv("PORT"))

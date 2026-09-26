@@ -1,5 +1,9 @@
 # ANS Health Tracker - Monitoramento e Análise Cadastral de Operadoras ANS
 
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/template)
+
+> **Demo online:** [web-production-a3f77.up.railway.app](https://web-production-a3f77.up.railway.app/)
+
 Aplicação desenvolvida em Python para monitorar, comparar e analisar snapshots mensais do cadastro de operadoras de planos de saúde da ANS (Agência Nacional de Saúde Suplementar - CADOP).
 
 O projeto conta com interface de linha de comando (CLI) e uma API web com FastAPI e interface Vue.js para visualização das métricas e alterações no navegador.
@@ -11,13 +15,13 @@ O objetivo principal desta aplicação é disponibilizar uma ferramenta para ras
 A aplicação realiza a leitura e normalização de arquivos CSV fornecidos pelo Portal de Dados Abertos da ANS e disponibiliza funcionalidades para:
 
 * Baixar e armazenar snapshots mensais do CADOP automaticamente via HTTP;
-* Utilizar a base histórica de Junho/2026 (`2026-06.csv`) como referência cadastral;
+* Utilizar bases históricas de Junho/2026 (`2026-06.csv`) e Julho/2026 (`2026-07.csv`) como referência cadastral;
 * Identificar novas operadoras cadastradas (adicionadas);
 * Identificar operadoras canceladas ou removidas da base cadastral;
 * Detectar alterações nos atributos de cada operadora (razão social, CNPJ, modalidade, UF, cidade, representante, data de registro);
 * Destacar mudanças críticas em campos de alto impacto, como modalidade e situação;
 * Analisar e reportar inconsistências nos dados cadastrais;
-* Exibir relatórios no terminal ou via painel web interativo;
+* Exibir relatórios no terminal ou via painel web interativo com seleção dinâmica de períodos;
 * Exportar o relatório de diferenciação (diff) em formato CSV padronizado.
 
 ## Estrutura do projeto
@@ -26,7 +30,8 @@ A aplicação realiza a leitura e normalização de arquivos CSV fornecidos pelo
 .
 ├── data/
 │   └── snapshots/
-│       └── 2026-06.csv       # Base de referência histórica
+│       ├── 2026-06.csv       # Snapshot de Junho/2026
+│       └── 2026-07.csv       # Snapshot de Julho/2026
 ├── static/
 │   └── index.html            # Interface web com Vue.js
 ├── analyzer.py               # Motor de análise cadastral
@@ -82,6 +87,27 @@ python -m uvicorn api:app --reload
 ```
 
 Em seguida, acesse no navegador: `http://localhost:8000`
+
+## Deploy na nuvem (Railway)
+
+O projeto está configurado para ser hospedado no [Railway](https://railway.com) com **zero alterações no código**.
+
+### Passo a passo
+
+1. Faça o push do projeto para um repositório no GitHub
+2. Acesse [railway.com](https://railway.com) e crie uma conta gratuita
+3. Clique em **New Project → Deploy from GitHub repo**
+4. Selecione este repositório
+5. O Railway detecta automaticamente o `Procfile` e inicia o servidor
+6. Após o deploy, vá em **Settings → Networking → Generate Domain** para obter a URL pública
+
+A URL pública ficará disponível em formato `https://seu-projeto.up.railway.app`.
+
+> O arquivo `Procfile` na raiz do projeto instrui o Railway a executar:
+> ```
+> uvicorn api:app --host 0.0.0.0 --port $PORT
+> ```
+> Localmente, `python api.py` continua funcionando normalmente na porta `8000`.
 
 ## Autor
 

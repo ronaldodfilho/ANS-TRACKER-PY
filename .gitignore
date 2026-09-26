@@ -1,5 +1,6 @@
 data/snapshots/*
 !data/snapshots/2026-06.csv
+!data/snapshots/2026-07.csv
 output/
 __pycache__/
 *.pyc

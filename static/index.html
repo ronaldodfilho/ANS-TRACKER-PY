@@ -38,6 +38,54 @@
       font-size: 14px;
       color: #718096;
     }
+    .barra-controles {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px 20px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .campo-controle {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .campo-controle label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #4a5568;
+    }
+    .campo-controle select {
+      padding: 8px 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #2d3748;
+      background-color: #fff;
+      min-width: 140px;
+    }
+    .botao-primario {
+      padding: 9px 18px;
+      background-color: #3182ce;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.15s;
+    }
+    .botao-primario:hover:not(:disabled) {
+      background-color: #2b6cb0;
+    }
+    .botao-primario:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
     .botao-download {
       padding: 9px 18px;
       background-color: #2b6cb0;
@@ -172,12 +220,37 @@
           Carregando dados cadastrais da ANS...
         </p>
       </div>
-      <div>
-        <a href="/api/download-csv" class="botao-download" v-if="resultado">
+    </header>
+
+    <div class="barra-controles">
+      <div class="campo-controle">
+        <label for="select-periodo-anterior">Snapshot Base (Anterior):</label>
+        <select id="select-periodo-anterior" v-model="periodoAnterior">
+          <option v-for="snap in snapshotsDisponiveis" :key="'ant-' + snap" :value="snap">
+            {{ snap }}
+          </option>
+        </select>
+      </div>
+
+      <div class="campo-controle">
+        <label for="select-periodo-atual">Snapshot Atual (Comparado):</label>
+        <select id="select-periodo-atual" v-model="periodoAtual">
+          <option v-for="snap in snapshotsDisponiveis" :key="'atu-' + snap" :value="snap">
+            {{ snap }}
+          </option>
+        </select>
+      </div>
+
+      <button class="botao-primario" @click="carregarDados" :disabled="carregando">
+        {{ carregando ? 'Processando...' : 'Comparar' }}
+      </button>
+
+      <div style="margin-left: auto;">
+        <a :href="urlDownloadCsv" class="botao-download" v-if="resultado && !carregando">
           Baixar CSV do Diff
         </a>
       </div>
-    </header>
+    </div>
 
     <div v-if="erro" class="erro-mensagem">
       {{ erro }}
@@ -337,7 +410,7 @@
   </div>
 
   <script>
-    const { createApp, ref, onMounted } = Vue;
+    const { createApp, ref, computed, onMounted } = Vue;
 
     createApp({
       setup() {
@@ -345,15 +418,43 @@
         const erro = ref(null);
         const carregando = ref(true);
         const abaAtiva = ref('alterados');
+        const snapshotsDisponiveis = ref(['2026-06', '2026-07']);
+        const periodoAnterior = ref('2026-06');
+        const periodoAtual = ref('2026-07');
+
+        const urlDownloadCsv = computed(() => {
+          return `/api/download-csv?periodo_anterior=${encodeURIComponent(periodoAnterior.value)}&periodo_atual=${encodeURIComponent(periodoAtual.value)}`;
+        });
+
+        async function buscarSnapshots() {
+          try {
+            const resp = await fetch('/api/snapshots');
+            if (resp.ok) {
+              const lista = await resp.json();
+              if (Array.isArray(lista) && lista.length > 0) {
+                snapshotsDisponiveis.value = lista;
+                if (!lista.includes(periodoAnterior.value)) {
+                  periodoAnterior.value = lista[0];
+                }
+                if (!lista.includes(periodoAtual.value)) {
+                  periodoAtual.value = lista.length > 1 ? lista[1] : lista[0];
+                }
+              }
+            }
+          } catch (e) {
+            console.error('Falha ao obter lista de snapshots', e);
+          }
+        }
 
         async function carregarDados() {
           erro.value = null;
           carregando.value = true;
           try {
-            const resposta = await fetch('/api/dados');
+            const url = `/api/dados?periodo_anterior=${encodeURIComponent(periodoAnterior.value)}&periodo_atual=${encodeURIComponent(periodoAtual.value)}`;
+            const resposta = await fetch(url);
             if (!resposta.ok) {
               const dadosErro = await resposta.json();
-              throw new Error(dadosErro.detail || 'Falha ao processar comparação.');
+              throw new Error(dadosErro.detail || 'Falha ao processar comparacao.');
             }
             resultado.value = await resposta.json();
           } catch (e) {
@@ -363,15 +464,21 @@
           }
         }
 
-        onMounted(() => {
-          carregarDados();
+        onMounted(async () => {
+          await buscarSnapshots();
+          await carregarDados();
         });
 
         return {
           resultado,
           erro,
           carregando,
-          abaAtiva
+          abaAtiva,
+          snapshotsDisponiveis,
+          periodoAnterior,
+          periodoAtual,
+          urlDownloadCsv,
+          carregarDados
         };
       }
     }).mount('#aplicativo');
