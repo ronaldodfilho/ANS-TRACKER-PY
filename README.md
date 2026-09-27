@@ -1,7 +1,5 @@
 # ANS Health Tracker - Monitoramento e Análise Cadastral de Operadoras ANS
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/template)
-
 > **Demo online:** [web-production-a3f77.up.railway.app](https://web-production-a3f77.up.railway.app/)
 
 Aplicação desenvolvida em Python para monitorar, comparar e analisar snapshots mensais do cadastro de operadoras de planos de saúde da ANS (Agência Nacional de Saúde Suplementar - CADOP).
@@ -87,27 +85,6 @@ python -m uvicorn api:app --reload
 ```
 
 Em seguida, acesse no navegador: `http://localhost:8000`
-
-## Deploy na nuvem (Railway)
-
-O projeto está configurado para ser hospedado no [Railway](https://railway.com) com **zero alterações no código**.
-
-### Passo a passo
-
-1. Faça o push do projeto para um repositório no GitHub
-2. Acesse [railway.com](https://railway.com) e crie uma conta gratuita
-3. Clique em **New Project → Deploy from GitHub repo**
-4. Selecione este repositório
-5. O Railway detecta automaticamente o `Procfile` e inicia o servidor
-6. Após o deploy, vá em **Settings → Networking → Generate Domain** para obter a URL pública
-
-A URL pública ficará disponível em formato `https://seu-projeto.up.railway.app`.
-
-> O arquivo `Procfile` na raiz do projeto instrui o Railway a executar:
-> ```
-> uvicorn api:app --host 0.0.0.0 --port $PORT
-> ```
-> Localmente, `python api.py` continua funcionando normalmente na porta `8000`.
 
 ## Autor
 

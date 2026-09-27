@@ -1,5 +1,6 @@
 import argparse
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from analyzer import enriquecer_diff
@@ -23,9 +24,12 @@ def _construir_parser() -> argparse.ArgumentParser:
         "periodo_anterior",
         help="Periodo de referencia anterior no formato AAAA-MM (ex: 2026-08)",
     )
+    mes_atual_padrao = datetime.now().strftime("%Y-%m")
     parser.add_argument(
         "periodo_atual",
-        help="Periodo atual no formato AAAA-MM (ex: 2026-09)",
+        nargs="?",
+        default=mes_atual_padrao,
+        help=f"Periodo atual no formato AAAA-MM (padrao: mes atual mais recente {mes_atual_padrao})",
     )
     parser.add_argument(
         "--exportar",
