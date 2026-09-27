@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from analyzer import enriquecer_diff
 from comparator import comparar
 from config import PASTA_SNAPSHOTS
-from fetcher import baixar_snapshot, snapshot_existe
+from fetcher import baixar_snapshot, snapshot_existe, garantir_snapshot_recente, obter_identificador_recente
 from loader import carregar_snapshot
 from reporter import exportar_csv_diff
 
@@ -16,13 +16,9 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
-def obter_mes_atual() -> str:
-    return datetime.now().strftime("%Y-%m")
-
-
 def _obter_resumo(periodo_anterior: str = "2026-06", periodo_atual: str = None):
     if not periodo_atual:
-        periodo_atual = obter_mes_atual()
+        periodo_atual = obter_identificador_recente()
 
     for periodo in [periodo_anterior, periodo_atual]:
         if not snapshot_existe(periodo):
@@ -45,12 +41,10 @@ def _obter_resumo(periodo_anterior: str = "2026-06", periodo_atual: str = None):
 def inicializar_dados():
     pasta = Path(PASTA_SNAPSHOTS)
     pasta.mkdir(parents=True, exist_ok=True)
-    mes_atual = obter_mes_atual()
-    if not snapshot_existe(mes_atual):
-        try:
-            baixar_snapshot(mes_atual)
-        except Exception as e:
-            print(f"Aviso: Nao foi possivel baixar snapshot {mes_atual} na inicializacao: {e}")
+    try:
+        garantir_snapshot_recente()
+    except Exception as e:
+        print(f"Aviso: Nao foi possivel sincronizar snapshot recente na inicializacao: {e}")
 
 
 @app.get("/")
@@ -62,19 +56,17 @@ def pagina_inicial():
 def listar_snapshots():
     pasta = Path(PASTA_SNAPSHOTS)
     pasta.mkdir(parents=True, exist_ok=True)
-    mes_atual = obter_mes_atual()
-    if not snapshot_existe(mes_atual):
-        try:
-            baixar_snapshot(mes_atual)
-        except Exception:
-            pass
+    try:
+        garantir_snapshot_recente()
+    except Exception:
+        pass
     return sorted([p.stem for p in pasta.glob("*.csv")])
 
 
 @app.get("/api/dados")
 def obter_dados(periodo_anterior: str = "2026-06", periodo_atual: str = None):
     if not periodo_atual:
-        periodo_atual = obter_mes_atual()
+        periodo_atual = obter_identificador_recente()
     resumo = _obter_resumo(periodo_anterior, periodo_atual)
     return {
         "periodo_anterior": resumo.periodo_anterior,
@@ -120,7 +112,7 @@ def obter_dados(periodo_anterior: str = "2026-06", periodo_atual: str = None):
 @app.get("/api/download-csv")
 def baixar_csv(periodo_anterior: str = "2026-06", periodo_atual: str = None):
     if not periodo_atual:
-        periodo_atual = obter_mes_atual()
+        periodo_atual = obter_identificador_recente()
     resumo = _obter_resumo(periodo_anterior, periodo_atual)
     caminho_csv = exportar_csv_diff(resumo)
     return FileResponse(caminho_csv, filename=f"diff_{periodo_anterior}_{periodo_atual}.csv", media_type="text/csv")

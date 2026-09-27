@@ -1,3 +1,5 @@
+from datetime import datetime
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 
 import requests
@@ -15,6 +17,25 @@ def _obter_caminho(periodo: str) -> Path:
 
 def snapshot_existe(periodo: str) -> bool:
     return _obter_caminho(periodo).exists()
+
+
+def obter_identificador_recente() -> str:
+    try:
+        resposta = requests.head(_montar_url(), timeout=10)
+        last_modified = resposta.headers.get("Last-Modified")
+        if last_modified:
+            data_dt = parsedate_to_datetime(last_modified)
+            return data_dt.strftime("%Y-%m-%d")
+    except Exception:
+        pass
+    return datetime.now().strftime("%Y-%m-%d")
+
+
+def garantir_snapshot_recente() -> str:
+    identificador = obter_identificador_recente()
+    if not snapshot_existe(identificador):
+        baixar_snapshot(identificador)
+    return identificador
 
 
 def baixar_snapshot(periodo: str) -> Path:

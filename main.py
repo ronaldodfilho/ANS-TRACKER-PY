@@ -5,7 +5,7 @@ from pathlib import Path
 
 from analyzer import enriquecer_diff
 from comparator import comparar
-from fetcher import baixar_snapshot, snapshot_existe
+from fetcher import baixar_snapshot, snapshot_existe, obter_identificador_recente
 from loader import carregar_snapshot
 from reporter import exportar_csv_diff, imprimir_resumo
 
@@ -22,14 +22,13 @@ def _construir_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "periodo_anterior",
-        help="Periodo de referencia anterior no formato AAAA-MM (ex: 2026-08)",
+        help="Periodo ou data anterior (ex: 2026-06 ou 2026-06-01)",
     )
-    mes_atual_padrao = datetime.now().strftime("%Y-%m")
     parser.add_argument(
         "periodo_atual",
         nargs="?",
-        default=mes_atual_padrao,
-        help=f"Periodo atual no formato AAAA-MM (padrao: mes atual mais recente {mes_atual_padrao})",
+        default=None,
+        help="Periodo ou data atual (ex: 2026-09 ou 2026-09-28). Padrao: versao mais recente da ANS",
     )
     parser.add_argument(
         "--exportar",
@@ -62,16 +61,25 @@ def _garantir_snapshot(periodo: str, sem_download: bool) -> None:
 
 
 def executar(args: argparse.Namespace) -> None:
+    periodo_atual = args.periodo_atual
+    if not periodo_atual:
+        if args.sem_download:
+            pasta = Path("data/snapshots")
+            candidatos = sorted([p.stem for p in pasta.glob("*.csv") if p.stem != args.periodo_anterior])
+            periodo_atual = candidatos[-1] if candidatos else "2026-09"
+        else:
+            periodo_atual = obter_identificador_recente()
+
     _garantir_snapshot(args.periodo_anterior, args.sem_download)
-    _garantir_snapshot(args.periodo_atual, args.sem_download)
+    _garantir_snapshot(periodo_atual, args.sem_download)
 
     caminho_anterior = Path("data/snapshots") / f"{args.periodo_anterior}.csv"
-    caminho_atual = Path("data/snapshots") / f"{args.periodo_atual}.csv"
+    caminho_atual = Path("data/snapshots") / f"{periodo_atual}.csv"
 
     df_anterior = carregar_snapshot(caminho_anterior)
     df_atual = carregar_snapshot(caminho_atual)
 
-    resumo = comparar(df_anterior, df_atual, args.periodo_anterior, args.periodo_atual)
+    resumo = comparar(df_anterior, df_atual, args.periodo_anterior, periodo_atual)
     resumo = enriquecer_diff(resumo, df_atual)
 
     imprimir_resumo(resumo)
