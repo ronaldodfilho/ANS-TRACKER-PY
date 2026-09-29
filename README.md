@@ -4,7 +4,7 @@
 
 Aplicação desenvolvida em Python para monitorar, comparar e analisar snapshots mensais do cadastro de operadoras de planos de saúde da ANS (Agência Nacional de Saúde Suplementar - CADOP).
 
-O projeto conta com interface de linha de comando (CLI) e uma API web com FastAPI e interface Vue.js para visualização das métricas e alterações no navegador.
+O projeto conta com interface de linha de comando (CLI) e uma API web com FastAPI e interface Vue.js para visualização das métricas.
 
 ## Sobre o projeto
 
