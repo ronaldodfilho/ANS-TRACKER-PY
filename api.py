@@ -17,9 +17,16 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
+cache_resumos = {}
+
+
 def _obter_resumo(periodo_anterior: str = "2026-06", periodo_atual: str = None):
     if not periodo_atual:
         periodo_atual = obter_identificador_recente()
+
+    chave = (periodo_anterior, periodo_atual)
+    if chave in cache_resumos:
+        return cache_resumos[chave]
 
     for periodo in [periodo_anterior, periodo_atual]:
         if not snapshot_existe(periodo):
@@ -35,7 +42,9 @@ def _obter_resumo(periodo_anterior: str = "2026-06", periodo_atual: str = None):
     df_atual = carregar_snapshot(caminho_atual)
 
     resumo = comparar(df_anterior, df_atual, periodo_anterior, periodo_atual)
-    return enriquecer_diff(resumo, df_atual)
+    resultado = enriquecer_diff(resumo, df_atual)
+    cache_resumos[chave] = resultado
+    return resultado
 
 
 @app.on_event("startup")
@@ -48,6 +57,12 @@ def inicializar_dados():
     except Exception:
         pass
     enviar_snapshots_locais_github()
+    arquivos = sorted([p.stem for p in pasta.glob("*.csv")])
+    if len(arquivos) >= 2:
+        try:
+            _obter_resumo(arquivos[0], arquivos[-1])
+        except Exception:
+            pass
 
 
 @app.get("/")
@@ -58,13 +73,6 @@ def pagina_inicial():
 @app.get("/api/snapshots")
 def listar_snapshots():
     pasta = Path(PASTA_SNAPSHOTS)
-    pasta.mkdir(parents=True, exist_ok=True)
-    baixar_snapshots_github()
-    try:
-        garantir_snapshot_recente()
-    except Exception:
-        pass
-    enviar_snapshots_locais_github()
     return sorted([p.stem for p in pasta.glob("*.csv")])
 
 
