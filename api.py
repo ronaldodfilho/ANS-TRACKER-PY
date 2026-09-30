@@ -8,7 +8,7 @@ from analyzer import enriquecer_diff
 from comparator import comparar
 from config import PASTA_SNAPSHOTS
 from fetcher import baixar_snapshot, snapshot_existe, garantir_snapshot_recente, obter_identificador_recente
-from github_sync import baixar_snapshots_github
+from github_sync import baixar_snapshots_github, enviar_snapshots_locais_github
 from loader import carregar_snapshot
 from reporter import exportar_csv_diff
 
@@ -47,6 +47,7 @@ def inicializar_dados():
         garantir_snapshot_recente()
     except Exception:
         pass
+    enviar_snapshots_locais_github()
 
 
 @app.get("/")
@@ -63,6 +64,7 @@ def listar_snapshots():
         garantir_snapshot_recente()
     except Exception:
         pass
+    enviar_snapshots_locais_github()
     return sorted([p.stem for p in pasta.glob("*.csv")])
 
 
