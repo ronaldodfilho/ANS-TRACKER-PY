@@ -2,9 +2,9 @@
 
 > **Demo online:** [web-production-a3f77.up.railway.app](https://web-production-a3f77.up.railway.app/)
 
-Aplicação desenvolvida em Python para monitorar, comparar e analisar snapshots mensais do cadastro de operadoras de planos de saúde da ANS (Agência Nacional de Saúde Suplementar - CADOP).
+Aplicação desenvolvida em Python para monitorar, comparar e analisar snapshots periódicos do cadastro de operadoras de planos de saúde da ANS (Agência Nacional de Saúde Suplementar - CADOP).
 
-O projeto conta com interface de linha de comando (CLI) e uma API web com FastAPI e interface Vue.js para visualização das métricas.
+O projeto conta com interface de linha de comando (CLI) e uma API web com FastAPI e interface Vue.js para visualização interativa das métricas e alterações.
 
 ## Sobre o projeto
 
@@ -12,15 +12,16 @@ O objetivo principal desta aplicação é disponibilizar uma ferramenta para ras
 
 A aplicação realiza a leitura e normalização de arquivos CSV fornecidos pelo Portal de Dados Abertos da ANS e disponibiliza funcionalidades para:
 
-* Baixar e armazenar snapshots mensais do CADOP automaticamente via HTTP;
-* Utilizar bases históricas de Junho/2026 (`2026-06.csv`) e Julho/2026 (`2026-07.csv`) como referência cadastral;
-* Identificar novas operadoras cadastradas (adicionadas);
-* Identificar operadoras canceladas ou removidas da base cadastral;
-* Detectar alterações nos atributos de cada operadora (razão social, CNPJ, modalidade, UF, cidade, representante, data de registro);
-* Destacar mudanças críticas em campos de alto impacto, como modalidade e situação;
-* Analisar e reportar inconsistências nos dados cadastrais;
-* Exibir relatórios no terminal ou via painel web interativo com seleção dinâmica de períodos;
-* Exportar o relatório de diferenciação (diff) em formato CSV padronizado.
+* **Detecção e download automático:** Consulta a data exata da última modificação (`Last-Modified`) no portal da ANS e armazena os snapshots com suporte a granularidade diária (`AAAA-MM-DD`) e mensal (`AAAA-MM`);
+* **Rastreamento de histórico:** Comparação flexível entre quaisquer períodos cadastrados (ex: `2026-01-10`, `2026-06`, `2026-07`, etc.);
+* **Identificação de movimentações:**
+  * Novas operadoras cadastradas (adicionadas);
+  * Operadoras canceladas ou removidas da base cadastral;
+  * Alterações cadastrais (razão social, CNPJ, modalidade, UF, cidade, representante, data de registro);
+* **Destaque para mudanças críticas:** Alertas para alterações de alto impacto em modalidade e situação;
+* **Análise de inconsistências cadastrais:** Validação de integridade e consistência dos registros;
+* **Relatórios flexíveis:** Visualização formatada no terminal ou em painel web interativo;
+* **Exportação:** Geração de relatórios de diferenciação (diff) em formato CSV padronizado.
 
 ## Estrutura do projeto
 
@@ -28,6 +29,7 @@ A aplicação realiza a leitura e normalização de arquivos CSV fornecidos pelo
 .
 ├── data/
 │   └── snapshots/
+│       ├── 2026-01-10.csv    # Snapshot de Janeiro/2026
 │       ├── 2026-06.csv       # Snapshot de Junho/2026
 │       └── 2026-07.csv       # Snapshot de Julho/2026
 ├── static/
@@ -36,7 +38,7 @@ A aplicação realiza a leitura e normalização de arquivos CSV fornecidos pelo
 ├── api.py                    # Servidor FastAPI e rotas web
 ├── comparator.py             # Comparador diferencial entre períodos
 ├── config.py                 # Configurações globais
-├── fetcher.py                # Download automatizado da ANS
+├── fetcher.py                # Download automatizado e detecção de versão da ANS
 ├── loader.py                 # Carregamento e sanitização de CSV
 ├── main.py                   # Interface CLI de terminal
 ├── models.py                 # Dataclasses de domínio
@@ -58,16 +60,22 @@ pip install -r requirements.txt
 
 ### 2. Execução pelo Terminal (CLI)
 
-Para comparar a base de referência (Junho/2026) com o snapshot atual baixado da ANS e exportar o CSV:
+Para comparar uma base anterior com a **versão mais recente disponível** da ANS de forma automática:
 
 ```bash
-python main.py 2026-06 2026-09 --exportar
+python main.py 2026-06 --exportar
 ```
 
-Caso queira usar apenas arquivos locais já existentes:
+Para comparar entre duas datas ou períodos específicos:
 
 ```bash
-python main.py 2026-06 2026-09 --sem-download --exportar
+python main.py 2026-01-10 2026-07 --exportar
+```
+
+Caso queira usar apenas arquivos locais já existentes (sem realizar chamadas de rede):
+
+```bash
+python main.py 2026-06 2026-07 --sem-download --exportar
 ```
 
 ### 3. Execução da Interface Web (FastAPI + Vue.js)

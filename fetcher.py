@@ -5,6 +5,7 @@ from pathlib import Path
 import requests
 
 from config import ARQUIVO_CADOP, PASTA_SNAPSHOTS, URL_ANS
+from github_sync import salvar_snapshot_github
 
 
 def _montar_url() -> str:
@@ -54,4 +55,7 @@ def baixar_snapshot(periodo: str) -> Path:
         for bloco in resposta.iter_content(chunk_size=8192):
             arquivo.write(bloco)
 
+    salvar_snapshot_github(f"{periodo}.csv", caminho.read_bytes())
+
     return caminho
+

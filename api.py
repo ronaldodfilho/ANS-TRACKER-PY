@@ -8,6 +8,7 @@ from analyzer import enriquecer_diff
 from comparator import comparar
 from config import PASTA_SNAPSHOTS
 from fetcher import baixar_snapshot, snapshot_existe, garantir_snapshot_recente, obter_identificador_recente
+from github_sync import baixar_snapshots_github
 from loader import carregar_snapshot
 from reporter import exportar_csv_diff
 
@@ -41,10 +42,11 @@ def _obter_resumo(periodo_anterior: str = "2026-06", periodo_atual: str = None):
 def inicializar_dados():
     pasta = Path(PASTA_SNAPSHOTS)
     pasta.mkdir(parents=True, exist_ok=True)
+    baixar_snapshots_github()
     try:
         garantir_snapshot_recente()
-    except Exception as e:
-        print(f"Aviso: Nao foi possivel sincronizar snapshot recente na inicializacao: {e}")
+    except Exception:
+        pass
 
 
 @app.get("/")
@@ -56,11 +58,13 @@ def pagina_inicial():
 def listar_snapshots():
     pasta = Path(PASTA_SNAPSHOTS)
     pasta.mkdir(parents=True, exist_ok=True)
+    baixar_snapshots_github()
     try:
         garantir_snapshot_recente()
     except Exception:
         pass
     return sorted([p.stem for p in pasta.glob("*.csv")])
+
 
 
 @app.get("/api/dados")
