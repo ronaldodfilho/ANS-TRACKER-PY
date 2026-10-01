@@ -2,6 +2,10 @@
 
 > **Demo online:** [web-production-a3f77.up.railway.app](https://web-production-a3f77.up.railway.app/)
 
+<p align="center">
+  <img src="static/Demonstração-ANS-TRACKER.gif" alt="Demonstração ANS Tracker" width="100%" />
+</p>
+
 Aplicação desenvolvida em Python para monitorar, comparar e analisar snapshots periódicos do cadastro de operadoras de planos de saúde da ANS (Agência Nacional de Saúde Suplementar - CADOP).
 
 Conta com interface CLI, API REST com FastAPI, painel web com Vue.js e pipeline automatizado com GitHub Actions.
@@ -90,7 +94,7 @@ Acesse no navegador: `http://localhost:8000`
 
 ## Automação com GitHub Actions
 
-O workflow `.github/workflows/daily_sync.yml` executa diariamente às **06:00 BRT** (09:00 UTC) e salva novos snapshots em `data/snapshots/` apenas quando houver atualizações na base oficial.
+O workflow `.github/workflows/daily_sync.yml` executa diariamente às **08:00 BRT** (11:00 UTC) e salva novos snapshots em `data/snapshots/` apenas quando houver atualizações na base oficial.
 
 ---
 
