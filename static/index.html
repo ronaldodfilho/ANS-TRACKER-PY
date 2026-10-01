@@ -371,6 +371,28 @@
       border-radius: 8px;
       border: 1px solid #e2e8f0;
     }
+    .botao-topo {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      width: 44px;
+      height: 44px;
+      background-color: #2563eb;
+      color: #ffffff;
+      border: 1px solid #1d4ed8;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      z-index: 999;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+    .botao-topo:hover {
+      background-color: #1d4ed8;
+      transform: translateY(-2px);
+    }
   </style>
 </head>
 <body>
@@ -629,10 +651,21 @@
         </div>
       </div>
     </div>
+
+    <button
+      class="botao-topo"
+      v-if="mostrarBotaoTopo"
+      @click="voltarAoTopo"
+      title="Voltar ao topo"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="18 15 12 9 6 15"></polyline>
+      </svg>
+    </button>
   </div>
 
   <script>
-    const { createApp, ref, computed, onMounted } = Vue;
+    const { createApp, ref, computed, onMounted, onUnmounted } = Vue;
 
     createApp({
       setup() {
@@ -642,6 +675,7 @@
         const abaAtiva = ref('alterados');
         const menuAberto = ref(null);
         const termoPesquisa = ref('');
+        const mostrarBotaoTopo = ref(false);
 
         const agora = new Date();
         const ano = agora.getFullYear();
@@ -740,10 +774,24 @@
           }
         }
 
+        function monitorarScroll() {
+          mostrarBotaoTopo.value = window.scrollY > 300;
+        }
+
+        function voltarAoTopo() {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
         onMounted(async () => {
           window.addEventListener('click', fecharMenu);
+          window.addEventListener('scroll', monitorarScroll);
           await buscarSnapshots();
           await carregarDados();
+        });
+
+        onUnmounted(() => {
+          window.removeEventListener('click', fecharMenu);
+          window.removeEventListener('scroll', monitorarScroll);
         });
 
         return {
@@ -764,7 +812,9 @@
           urlDownloadCsv,
           alternarMenu,
           selecionarPeriodo,
-          carregarDados
+          carregarDados,
+          mostrarBotaoTopo,
+          voltarAoTopo
         };
       }
     }).mount('#aplicativo');
