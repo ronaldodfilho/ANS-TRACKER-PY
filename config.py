@@ -7,11 +7,15 @@ COLUNA_CHAVE = "registro_ans"
 
 COLUNAS_MONITORADAS = [
     "razao_social",
+    "nome_fantasia",
     "cnpj",
     "modalidade",
     "uf",
     "cidade",
+    "regiao_de_comercializacao",
     "representante",
+    "cargo_representante",
+    "endereco_eletronico",
     "data_registro_ans",
 ]
 
