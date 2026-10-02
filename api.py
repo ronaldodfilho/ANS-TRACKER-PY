@@ -20,9 +20,17 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 cache_resumos = {}
 
 
+def _obter_ultimo_periodo() -> str:
+    pasta = Path(PASTA_SNAPSHOTS)
+    arquivos = sorted([p.stem for p in pasta.glob("*.csv")])
+    if arquivos:
+        return arquivos[-1]
+    return obter_identificador_recente()
+
+
 def _obter_resumo(periodo_anterior: str = "2026-06", periodo_atual: str = None):
     if not periodo_atual:
-        periodo_atual = obter_identificador_recente()
+        periodo_atual = _obter_ultimo_periodo()
 
     chave = (periodo_anterior, periodo_atual)
     if chave in cache_resumos:
@@ -37,6 +45,10 @@ def _obter_resumo(periodo_anterior: str = "2026-06", periodo_atual: str = None):
 
     caminho_anterior = Path(PASTA_SNAPSHOTS) / f"{periodo_anterior}.csv"
     caminho_atual = Path(PASTA_SNAPSHOTS) / f"{periodo_atual}.csv"
+
+    if not caminho_atual.exists():
+        caminho_atual = Path(PASTA_SNAPSHOTS) / f"{_obter_ultimo_periodo()}.csv"
+        periodo_atual = caminho_atual.stem
 
     df_anterior = carregar_snapshot(caminho_anterior)
     df_atual = carregar_snapshot(caminho_atual)
