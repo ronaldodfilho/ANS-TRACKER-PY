@@ -34,6 +34,27 @@ def _padronizar_chave(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+MAPA_REGIOES = {
+    "1": "Nacional",
+    "2": "Grupo de Estados",
+    "3": "Estadual",
+    "4": "Grupo de Municípios",
+    "5": "Intermunicipal",
+    "6": "Municipal",
+}
+
+
+def _traduzir_regioes(df: pd.DataFrame) -> pd.DataFrame:
+    if "regiao_de_comercializacao" in df.columns:
+        df["regiao_de_comercializacao"] = (
+            df["regiao_de_comercializacao"]
+            .astype(str)
+            .str.strip()
+            .map(lambda val: MAPA_REGIOES.get(val, val))
+        )
+    return df
+
+
 def carregar_snapshot(caminho: Path) -> pd.DataFrame:
     try:
         df = pd.read_csv(
@@ -52,4 +73,5 @@ def carregar_snapshot(caminho: Path) -> pd.DataFrame:
     df = _normalizar_colunas(df)
     df = _normalizar_valores(df)
     df = _padronizar_chave(df)
+    df = _traduzir_regioes(df)
     return df
