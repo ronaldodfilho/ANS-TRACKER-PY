@@ -194,6 +194,7 @@
       gap: 8px;
       text-decoration: none;
       transition: all 0.15s;
+      cursor: pointer;
     }
     .botao-download:hover {
       background-color: #f8fafc;
@@ -476,6 +477,14 @@
         </svg>
         <span>Baixar CSV</span>
       </a>
+
+      <button type="button" class="botao-download" @click="copiarLink" v-if="resultado && !carregando" title="Copiar link com o período selecionado">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+        </svg>
+        <span>{{ copiado ? 'Copiado!' : 'Compartilhar' }}</span>
+      </button>
     </div>
 
     <div v-if="erro" class="erro-mensagem">
@@ -682,9 +691,14 @@
         const mes = String(agora.getMonth() + 1).padStart(2, '0');
         const mesAtual = `${ano}-${mes}`;
 
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlAnterior = urlParams.get('anterior') || urlParams.get('periodo_anterior');
+        const urlAtual = urlParams.get('atual') || urlParams.get('periodo_atual');
+
         const snapshotsDisponiveis = ref(['2026-06', '2026-07', mesAtual]);
-        const periodoAnterior = ref('2026-06');
-        const periodoAtual = ref(mesAtual);
+        const periodoAnterior = ref(urlAnterior || '2026-06');
+        const periodoAtual = ref(urlAtual || mesAtual);
+        const copiado = ref(false);
 
         function filtrarLista(lista) {
           if (!lista) return [];
@@ -738,17 +752,37 @@
           menuAberto.value = null;
         }
 
+        function atualizarUrl() {
+          const url = new URL(window.location.href);
+          url.searchParams.set('anterior', periodoAnterior.value);
+          url.searchParams.set('atual', periodoAtual.value);
+          window.history.replaceState({}, '', url.toString());
+        }
+
+        async function copiarLink() {
+          atualizarUrl();
+          try {
+            await navigator.clipboard.writeText(window.location.href);
+            copiado.value = true;
+            setTimeout(() => { copiado.value = false; }, 2000);
+          } catch (e) {
+            prompt('Copie a URL:', window.location.href);
+          }
+        }
+
         async function buscarSnapshots() {
           try {
             const resp = await fetch('/api/snapshots');
             if (resp.ok) {
               const lista = await resp.json();
               if (Array.isArray(lista) && lista.length > 0) {
-                snapshotsDisponiveis.value = lista;
-                if (!lista.includes(periodoAnterior.value)) {
+                snapshotsDisponiveis.value = [...new Set([...lista, ...(urlAnterior ? [urlAnterior] : []), ...(urlAtual ? [urlAtual] : [])])];
+                if (!urlAnterior && !lista.includes(periodoAnterior.value)) {
                   periodoAnterior.value = lista[0];
                 }
-                periodoAtual.value = lista[lista.length - 1];
+                if (!urlAtual) {
+                  periodoAtual.value = lista[lista.length - 1];
+                }
               }
             }
           } catch (e) {
@@ -757,6 +791,7 @@
         }
 
         async function carregarDados() {
+          atualizarUrl();
           erro.value = null;
           carregando.value = true;
           try {
@@ -813,6 +848,8 @@
           alternarMenu,
           selecionarPeriodo,
           carregarDados,
+          copiado,
+          copiarLink,
           mostrarBotaoTopo,
           voltarAoTopo
         };
