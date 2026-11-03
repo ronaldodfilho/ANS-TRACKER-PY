@@ -267,10 +267,30 @@
       color: #2563eb;
       border-bottom-color: #2563eb;
     }
+    .controles-tabela {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+    }
+    .seletor-filtro {
+      padding: 8px 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #1e293b;
+      background-color: #ffffff;
+      outline: none;
+      cursor: pointer;
+      max-width: 200px;
+    }
+    .seletor-filtro:focus {
+      border-color: #2563eb;
+    }
     .barra-pesquisa {
       position: relative;
-      width: 280px;
-      margin-bottom: 6px;
+      width: 260px;
     }
     .campo-pesquisa {
       width: 100%;
@@ -547,20 +567,55 @@
           </button>
         </div>
 
-        <div class="barra-pesquisa">
-          <input
-            type="text"
-            v-model="termoPesquisa"
-            placeholder="Pesquisar..."
-            class="campo-pesquisa"
+        <div class="controles-tabela">
+          <select
+            v-if="abaAtiva === 'alterados' && camposDisponiveis.length > 0"
+            v-model="campoFiltro"
+            class="seletor-filtro"
           >
-          <button
-            v-if="termoPesquisa"
-            class="botao-limpar-pesquisa"
-            @click="termoPesquisa = ''"
+            <option value="">Todos os campos</option>
+            <option v-for="c in camposDisponiveis" :key="c" :value="c">
+              Campo: {{ c }}
+            </option>
+          </select>
+
+          <select
+            v-if="(abaAtiva === 'adicionados' || abaAtiva === 'removidos') && ufsDisponiveis.length > 0"
+            v-model="ufFiltro"
+            class="seletor-filtro"
           >
-            ✕
-          </button>
+            <option value="">Todas as UFs</option>
+            <option v-for="uf in ufsDisponiveis" :key="uf" :value="uf">
+              UF: {{ uf }}
+            </option>
+          </select>
+
+          <select
+            v-if="(abaAtiva === 'adicionados' || abaAtiva === 'removidos') && modalidadesDisponiveis.length > 0"
+            v-model="modalidadeFiltro"
+            class="seletor-filtro"
+          >
+            <option value="">Todas as modalidades</option>
+            <option v-for="m in modalidadesDisponiveis" :key="m" :value="m">
+              {{ m }}
+            </option>
+          </select>
+
+          <div class="barra-pesquisa">
+            <input
+              type="text"
+              v-model="termoPesquisa"
+              placeholder="Pesquisar..."
+              class="campo-pesquisa"
+            >
+            <button
+              v-if="termoPesquisa"
+              class="botao-limpar-pesquisa"
+              @click="termoPesquisa = ''"
+            >
+              ✕
+            </button>
+          </div>
         </div>
       </div>
 
@@ -684,6 +739,9 @@
         const abaAtiva = ref('alterados');
         const menuAberto = ref(null);
         const termoPesquisa = ref('');
+        const campoFiltro = ref('');
+        const ufFiltro = ref('');
+        const modalidadeFiltro = ref('');
         const mostrarBotaoTopo = ref(false);
 
         const agora = new Date();
@@ -711,9 +769,60 @@
           );
         }
 
-        const alteracoesFiltradas = computed(() => filtrarLista(resultado.value?.alteracoes));
-        const adicionadosFiltrados = computed(() => filtrarLista(resultado.value?.adicionados));
-        const removidosFiltrados = computed(() => filtrarLista(resultado.value?.removidos));
+        const camposDisponiveis = computed(() => {
+          if (!resultado.value?.alteracoes) return [];
+          const campos = new Set(resultado.value.alteracoes.map(a => a.campo).filter(Boolean));
+          return Array.from(campos).sort();
+        });
+
+        const ufsDisponiveis = computed(() => {
+          const lista = abaAtiva.value === 'adicionados'
+            ? resultado.value?.adicionados
+            : resultado.value?.removidos;
+          if (!lista) return [];
+          const ufs = new Set(lista.map(item => item.uf).filter(Boolean));
+          return Array.from(ufs).sort();
+        });
+
+        const modalidadesDisponiveis = computed(() => {
+          const lista = abaAtiva.value === 'adicionados'
+            ? resultado.value?.adicionados
+            : resultado.value?.removidos;
+          if (!lista) return [];
+          const mods = new Set(lista.map(item => item.modalidade).filter(Boolean));
+          return Array.from(mods).sort();
+        });
+
+        const alteracoesFiltradas = computed(() => {
+          let lista = resultado.value?.alteracoes || [];
+          if (campoFiltro.value) {
+            lista = lista.filter(item => item.campo === campoFiltro.value);
+          }
+          return filtrarLista(lista);
+        });
+
+        const adicionadosFiltrados = computed(() => {
+          let lista = resultado.value?.adicionados || [];
+          if (ufFiltro.value) {
+            lista = lista.filter(item => item.uf === ufFiltro.value);
+          }
+          if (modalidadeFiltro.value) {
+            lista = lista.filter(item => item.modalidade === modalidadeFiltro.value);
+          }
+          return filtrarLista(lista);
+        });
+
+        const removidosFiltrados = computed(() => {
+          let lista = resultado.value?.removidos || [];
+          if (ufFiltro.value) {
+            lista = lista.filter(item => item.uf === ufFiltro.value);
+          }
+          if (modalidadeFiltro.value) {
+            lista = lista.filter(item => item.modalidade === modalidadeFiltro.value);
+          }
+          return filtrarLista(lista);
+        });
+
         const inconsistenciasFiltradas = computed(() => filtrarLista(resultado.value?.inconsistencias));
 
         const gruposMeses = computed(() => {
@@ -836,6 +945,12 @@
           abaAtiva,
           menuAberto,
           termoPesquisa,
+          campoFiltro,
+          ufFiltro,
+          modalidadeFiltro,
+          camposDisponiveis,
+          ufsDisponiveis,
+          modalidadesDisponiveis,
           alteracoesFiltradas,
           adicionadosFiltrados,
           removidosFiltrados,
