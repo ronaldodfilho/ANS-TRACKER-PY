@@ -1,103 +1,103 @@
-# ANS Health Tracker - Monitoramento e Análise Cadastral de Operadoras ANS
+# ANS Health Tracker - Monitoring Brazil's Health-Insurer Registry
 
-> **Demo online:** [web-production-a3f77.up.railway.app](https://web-production-a3f77.up.railway.app/)
+> **Live demo:** [web-production-a3f77.up.railway.app](https://web-production-a3f77.up.railway.app/) · [Versão em português](README.pt-BR.md)
 
 <p align="center">
-  <img src="static/Demonstração-ANS-TRACKER.gif" alt="Demonstração ANS Tracker" width="100%" />
+  <img src="static/Demonstração-ANS-TRACKER.gif" alt="ANS Tracker demo" width="100%" />
 </p>
 
-Aplicação desenvolvida em Python para monitorar, comparar e analisar snapshots periódicos do cadastro de operadoras de planos de saúde da ANS (Agência Nacional de Saúde Suplementar - CADOP).
+A Python application that monitors, compares and analyzes periodic snapshots of the registry of health-insurance operators published by ANS (Brazil's National Supplementary Health Agency - CADOP).
 
-Conta com interface CLI, API REST com FastAPI, painel web com Vue.js e pipeline automatizado com GitHub Actions.
-
----
-
-## Recursos e Funcionalidades
-
-* **Automação Diária (GitHub Actions):** Pipeline agendado que consulta e sincroniza novos snapshots da ANS diariamente.
-* **Sincronização em Nuvem (GitHub API):** Persistência e recuperação automática de dados para ambientes em nuvem (Railway, Render, Docker).
-* **Rastreamento e Comparação Histórica:** Comparação entre quaisquer períodos cadastrados, identificando operadoras adicionadas, canceladas e alterações de dados cadastrais.
-* **Mudanças Críticas e Inconsistências:** Alertas para alterações em modalidade/situação e validação de integridade (CNPJ, duplicidades, campos vazios).
-* **Relatórios e Exportação:** Visualização no painel web, no terminal (CLI) e download em CSV padronizado.
+It ships with a CLI, a FastAPI REST API, a Vue.js web dashboard and an automated GitHub Actions pipeline.
 
 ---
 
-## Estrutura do projeto
+## Features
+
+* **Daily automation (GitHub Actions):** a scheduled pipeline checks for and syncs new ANS snapshots every day.
+* **Cloud sync (GitHub API):** automatic persistence and recovery of data for cloud environments (Railway, Render, Docker).
+* **Historical tracking and comparison:** compares any two recorded periods, identifying added and cancelled operators and changes to registry data.
+* **Critical changes and inconsistencies:** alerts on changes to type/status and integrity checks (CNPJ, duplicates, empty fields).
+* **Reports and export:** results in the web dashboard, in the terminal (CLI) and as standardized CSV downloads.
+
+---
+
+## Project structure
 
 ```text
 .
 ├── .github/
 │   └── workflows/
-│       └── daily_sync.yml    # Automação diária via GitHub Actions
+│       └── daily_sync.yml    # Daily automation via GitHub Actions
 ├── data/
-│   └── snapshots/            # Snapshots históricos em CSV
+│   └── snapshots/            # Historical CSV snapshots
 ├── static/
-│   └── index.html            # Interface web com Vue.js
-├── analyzer.py               # Motor de análise e validação de inconsistências
-├── api.py                    # Servidor FastAPI e rotas web
-├── comparator.py             # Comparador diferencial entre períodos
-├── config.py                 # Configurações globais
-├── fetcher.py                # Download e detecção de versão da ANS
-├── github_sync.py            # Sincronização de dados via GitHub API
-├── loader.py                 # Carregamento e sanitização com pandas
-├── main.py                   # Interface CLI de terminal
-├── models.py                 # Dataclasses de domínio
-├── reporter.py               # Relatórios no terminal e CSV
-├── requirements.txt          # Dependências do projeto
-├── .env.example              # Exemplo de variáveis de ambiente
+│   └── index.html            # Vue.js web interface
+├── analyzer.py               # Analysis engine and inconsistency validation
+├── api.py                    # FastAPI server and web routes
+├── comparator.py             # Diff between periods
+├── config.py                 # Global settings
+├── fetcher.py                # Download and ANS version detection
+├── github_sync.py            # Data sync via the GitHub API
+├── loader.py                 # Loading and sanitizing with pandas
+├── main.py                   # Command-line interface
+├── models.py                 # Domain dataclasses
+├── reporter.py               # Terminal and CSV reports
+├── requirements.txt          # Project dependencies
+├── .env.example              # Example environment variables
 ├── .gitignore
 └── README.md
 ```
 
 ---
 
-## Como executar
+## Getting started
 
-### 1. Instalação de Dependências
+### 1. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Variáveis de Ambiente (Opcional)
+### 2. Environment variables (optional)
 
-Para sincronização remota via GitHub API, crie o `.env`:
+For remote sync via the GitHub API, create a `.env` file:
 
 ```env
-GITHUB_TOKEN=seu_token_pessoal_aqui
+GITHUB_TOKEN=your_personal_token_here
 GITHUB_REPO=ronaldodfilho/ANS-TRACKER-PY
 ```
 
-### 3. Execução pelo Terminal (CLI)
+### 3. Run from the terminal (CLI)
 
-Comparar com a versão mais recente da ANS:
+Compare against the latest ANS release:
 
 ```bash
 python main.py 2026-06 --exportar
 ```
 
-Comparar entre dois períodos específicos:
+Compare two specific periods:
 
 ```bash
 python main.py 2026-06 2026-09-30 --exportar
 ```
 
-### 4. Execução da Interface Web (FastAPI + Vue.js)
+### 4. Run the web interface (FastAPI + Vue.js)
 
 ```bash
 python api.py
 ```
 
-Acesse no navegador: `http://localhost:8000`
+Open `http://localhost:8000` in your browser.
 
 ---
 
-## Automação com GitHub Actions
+## GitHub Actions automation
 
-O workflow `.github/workflows/daily_sync.yml` executa diariamente às **08:00 BRT** (11:00 UTC) e salva novos snapshots em `data/snapshots/` apenas quando houver atualizações na base oficial.
+The `.github/workflows/daily_sync.yml` workflow runs every day at **08:00 BRT** (11:00 UTC) and saves new snapshots to `data/snapshots/` only when the official dataset has changed.
 
 ---
 
-## Autor
+## Author
 
 Ronaldo Dutra Filho
