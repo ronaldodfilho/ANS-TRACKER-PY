@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'data/**'
+      - 'output/**'
+      - '**.md'
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Pytest Suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Run tests
+        run: pytest -v
